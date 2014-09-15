@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.libra.mulitlistview.core.listener.OnItemClickListener;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -15,37 +17,37 @@ import android.widget.BaseAdapter;
 /**
  * 
  * @author liaomin
- *
- * @param <T> HolderView
+ * 
  */
-public abstract class BaseMulitiAdapter<T> extends BaseAdapter {
-	
+public abstract class BaseMulitiAdapter extends BaseAdapter {
+
 	/**
-	 * 
-	 *typeMap key 表示view的type，Integer表示resourceId的
+	 * typeMap key 表示view的type，Integer表示resourceId的
 	 */
-	private Map<Integer,Integer> mTypeViewMap;
-	
+	private Map<Integer, Integer> mTypeViewMap;
+
 	private Context context;
-	
+
 	/**
 	 * key:表示view的type，value表示数据
 	 */
-	private Map<Integer,TypeData> mTypeDataMap;
-	
+	private Map<Integer, TypeData> mTypeDataMap;
+
 	/**
 	 * 每个item的类型.Integer类型；
 	 */
 	private List<Integer> mPositionTypeList;
-	
+
 	private int mPositionCount;
-	
-	public BaseMulitiAdapter(Context context, Map<Integer,Integer> typeViewMap,Map<Integer,Object[]> typeData){
+
+	public BaseMulitiAdapter(Context context,
+			Map<Integer, Integer> typeViewMap, Map<Integer, Object[]> typeData) {
 		this.context = context;
 		mTypeViewMap = typeViewMap;
 		initPositionCount(typeData);
 		initTypeDataMap(typeData);
 	}
+
 
 	private void initPositionCount(Map<Integer, Object[]> typeData) {
 		// TODO Auto-generated method stub
@@ -56,13 +58,14 @@ public abstract class BaseMulitiAdapter<T> extends BaseAdapter {
 		}
 	}
 
-	@SuppressLint("UseSparseArrays") private void initTypeDataMap(Map<Integer, Object[]> typeData) {
+	@SuppressLint("UseSparseArrays")
+	private void initTypeDataMap(Map<Integer, Object[]> typeData) {
 		// TODO Auto-generated method stub
-		mTypeDataMap = new HashMap<Integer, BaseMulitiAdapter<T>.TypeData>();
+		mTypeDataMap = new HashMap<Integer, TypeData>();
 		Set<Integer> keySet = typeData.keySet();
 		for (Integer integer : keySet) {
 			TypeData mTypeData = new TypeData();
-			mTypeData.mData = typeData.get(integer);
+			mTypeData.setmData(typeData.get(integer));
 			mTypeDataMap.put(integer, mTypeData);
 		}
 	}
@@ -70,7 +73,13 @@ public abstract class BaseMulitiAdapter<T> extends BaseAdapter {
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
+		setPositionTypeList(mPositionCount);
 		return mPositionCount;
+	}
+
+	private void setPositionTypeList(int mPositionCount) {
+		// TODO Auto-generated method stub
+		onSetTypeList(mPositionCount);
 	}
 
 	@Override
@@ -78,14 +87,15 @@ public abstract class BaseMulitiAdapter<T> extends BaseAdapter {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
 	public final int getItemViewType(int position) {
 		// TODO Auto-generated method stub
-		if(mPositionTypeList != null) return mPositionTypeList.get(position);
+		if (mPositionTypeList != null)
+			return mPositionTypeList.get(position);
 		return super.getItemViewType(position);
 	}
-	
+
 	@Override
 	public final int getViewTypeCount() {
 		// TODO Auto-generated method stub
@@ -103,84 +113,91 @@ public abstract class BaseMulitiAdapter<T> extends BaseAdapter {
 		// TODO Auto-generated method stub
 		int mType = getItemViewType(position);
 		TypeData typeData = mTypeDataMap.get(mType);
-		if(convertView ==null){
+		if (convertView == null) {
 			int layourResId = mTypeViewMap.get(mType);
-			convertView = LayoutInflater.from(context).inflate(layourResId, parent, false);
-			onFinishInflater(mType,convertView,position,parent);
+			convertView = LayoutInflater.from(context).inflate(layourResId,
+					parent, false);
+			onFinishInflater(mType, convertView, position, parent);
 			setTypeDateColumn(convertView, mType);
 		}
-		if(convertView.getTag() == null){
-			T tag = onSetTag(convertView, mType);
+		if (convertView.getTag() == null) {
+			ViewHolder tag = onSetTag(convertView, mType);
 			convertView.setTag(tag);
 		}
 		@SuppressWarnings("unchecked")
-		T holder = (T) convertView.getTag();
+		ViewHolder holder = (ViewHolder) convertView.getTag();
 		int typePosition = typeData.getmApterPositiongetTypePosition(position);
-		onFillDate(holder,mType,typeData.mData[typePosition]);
+		setOnItemClick(holder,convertView, typePosition, typeData);
+		onFillDate(holder, mType, typeData.getmData()[typePosition]);
 		return convertView;
 	}
 
-	private void setTypeDateColumn(View convertView, int mType) {
-		if(mTypeDataMap.get(mType).mViewColumn == -1){
-			if(convertView instanceof ViewGroup){
-				mTypeDataMap.get(mType).mViewColumn = ((ViewGroup) convertView).getChildCount();
-			} else{
-				mTypeDataMap.get(mType).mViewColumn = 1;
+	@SuppressLint("NewApi")
+	private void setOnItemClick(ViewHolder viewHolder, View convertView, int typePosition,
+			TypeData typeData) {
+		if (convertView instanceof ViewGroup) {
+			int childCount = ((ViewGroup) convertView).getChildCount();
+			for (int i = 0; i < childCount; i++) {
+				View childView = ((ViewGroup) convertView).getChildAt(i);
+				OnItemClickListener listener = viewHolder.getOnItemClickListener(i);
+				if (!childView.hasOnClickListeners()) {
+					childView.setOnClickListener(listener);
+				} else {
+					listener.setRow(typePosition);
+				}
 			}
 		}
 	}
-	
+
+	private void setTypeDateColumn(View convertView, int mType) {
+		if (mTypeDataMap.get(mType).getmViewColumn() == -1) {
+			if (convertView instanceof ViewGroup) {
+				mTypeDataMap.get(mType).setmViewColumn(((ViewGroup) convertView)
+						.getChildCount());
+			} else {
+				mTypeDataMap.get(mType).setmViewColumn(1);
+			}
+		}
+	}
+
 	/**
 	 * 加载数据
+	 * 
 	 * @param holder
 	 * @param type
 	 * @param data
 	 */
-	abstract void onFillDate(T holder,int type,Object data);
-	
+	public abstract void onFillDate(ViewHolder holder, int type, Object data);
+
 	/**
-	 * 设置holderview
+	 * 设置ViewHolder
+	 * 
 	 * @param convertView
 	 * @param type
 	 * @return
 	 */
-	abstract T onSetTag(View convertView,int type);
-	
+	public abstract ViewHolder onSetTag(View convertView, int type);
+
 	/**
 	 * 布局加载完成
+	 * 
 	 * @param type
 	 * @param convertView
 	 * @param position
 	 * @param parent
 	 */
-	abstract void onFinishInflater(int type, View convertView, int position, ViewGroup parent);
+	public abstract void onFinishInflater(int type, View convertView,
+			int position, ViewGroup parent);
 
-	class TypeData{
-		
-		Object[] mData;
-		
-		int mViewColumn = -1;
-		
-		private int mMaxAdapterPosition = -1;
-		
-		private int mtypePositionCounter;
-		
-		/**
-		 * key:表示View的type value:getview()传过来的position以及这个类型所实际的position
-		 */
-		@SuppressLint("UseSparseArrays") private Map<Integer, Integer> mApterPositiongetTypePosition = new HashMap<Integer, Integer>();
+	/**
+	 * 设置每行的布局类型
+	 * 
+	 * @param mPositionCounter
+	 * @return
+	 */
+	public abstract List<Integer> onSetTypeList(int mPositionCounter);
 
-		public Integer getmApterPositiongetTypePosition(int adapterPosition) {
-			setApterPositiongetTypePosition(adapterPosition);
-			return mApterPositiongetTypePosition.get(adapterPosition);
-		}
+	
 
-		private void setApterPositiongetTypePosition(int adapterPosition) {
-			if(adapterPosition > mMaxAdapterPosition){
-				mMaxAdapterPosition = adapterPosition;				
-				int curPosition = ++mtypePositionCounter;
-				mApterPositiongetTypePosition.put(adapterPosition, curPosition);
-			}
-		}
-	}
+	
 }
