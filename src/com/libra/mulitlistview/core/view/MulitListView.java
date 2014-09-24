@@ -47,7 +47,6 @@ public class MulitListView extends ListView {
 	}
 	 
 	 public interface OnItemClickListener{
-		 
 		 void onItemClick(int position,View v);
 	 }
 	 
